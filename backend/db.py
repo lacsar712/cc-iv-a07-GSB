@@ -13,15 +13,42 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS iv_scans (
     id serial PRIMARY KEY,
     string_code text NOT NULL,
-    voc_v double precision NOT NULL,
-    isc_a double precision NOT NULL,
+    voc_v double precision,
+    isc_a double precision,
     fill_factor double precision NOT NULL,
+    est_power_w double precision,
     status text NOT NULL DEFAULT 'pending',
     verdict text,
     reason text,
     created_by text NOT NULL,
     created_at timestamptz NOT NULL,
     processed_at timestamptz
+);
+ALTER TABLE iv_scans ADD COLUMN IF NOT EXISTS est_power_w double precision;
+ALTER TABLE iv_scans ALTER COLUMN voc_v DROP NOT NULL;
+ALTER TABLE iv_scans ALTER COLUMN isc_a DROP NOT NULL;
+CREATE TABLE IF NOT EXISTS nameplate_ratings (
+    id serial PRIMARY KEY,
+    string_code text NOT NULL UNIQUE,
+    rating_w double precision NOT NULL,
+    created_by text NOT NULL,
+    updated_by text,
+    created_at timestamptz NOT NULL,
+    updated_at timestamptz
+);
+CREATE TABLE IF NOT EXISTS check_traces (
+    id serial PRIMARY KEY,
+    scan_id integer NOT NULL REFERENCES iv_scans(id),
+    string_code text NOT NULL,
+    voc_v double precision,
+    isc_a double precision,
+    est_power_w double precision,
+    rating_w double precision,
+    ff_submitted double precision,
+    ff_derived double precision,
+    consistent boolean NOT NULL,
+    created_by text NOT NULL,
+    created_at timestamptz NOT NULL
 );
 CREATE OR REPLACE FUNCTION notify_iv_scan() RETURNS trigger AS $$
 BEGIN
